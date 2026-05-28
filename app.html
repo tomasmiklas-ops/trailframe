@@ -131,11 +131,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--forest);f
       <button class="add-btn" onclick="openModal()">+ Pridať trasu manuálne</button>
     </div>
     <div class="hike-list" id="hikeList"><div style="text-align:center;padding:20px;color:var(--muted)">Načítavam...</div></div>
-    <div class="form-group" style="margin-top:8px">
-  <label>Fotky na trase (voliteľné)</label>
-  <input type="file" id="mPhotos" accept="image/*" multiple style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;width:100%;color:var(--forest);font-family:'DM Sans',sans-serif;font-size:13px">
-  <div style="font-size:11px;color:var(--muted);margin-top:4px">GPS súradnice sa načítajú automaticky z fotiek</div>
-</div>
   </div>
 
   <div class="map-wrap">
@@ -190,6 +185,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--forest);f
         <select id="mDiff"><option>Ľahká</option><option selected>Stredná</option><option>Ťažká</option></select>
       </div>
     </div>
+   <div class="form-group" style="margin-top:8px">
+  <label>Fotky na trase (voliteľné)</label>
+  <input type="file" id="mPhotos" accept="image/*" multiple style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;width:100%;color:var(--forest);font-family:'DM Sans',sans-serif;font-size:13px">
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">GPS súradnice sa načítajú automaticky z fotiek</div>
+</div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal()">Zrušiť</button>
       <button class="btn-save" onclick="saveHike()">Uložiť</button>
