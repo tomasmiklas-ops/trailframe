@@ -6,135 +6,107 @@
 <title>TrailFrame — App</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  :root{
-    --bg:#F5F0E8;--bg2:#E8E0D0;--bg3:#D8CEC0;
-    --sage:#7A9E7E;--teal:#4AADA0;--terracotta:#D4845A;
-    --wheat:#C8A97E;--forest:#4A5C4A;--muted:#8A9A8A;--border:#E8E0D0;
-  }
-  html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--forest);font-family:'DM Sans',sans-serif}
-
-  /* TOPBAR */
-  .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:54px;background:rgba(245,240,232,0.97);border-bottom:1px solid var(--border);z-index:1000;position:relative;box-shadow:0 1px 8px rgba(74,92,74,0.06)}
-  .logo{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--sage)}
-  .logo span{color:var(--forest)}
-  .topbar-right{display:flex;align-items:center;gap:10px}
-  .user-chip{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 4px}
-  .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff}
-  .user-name{font-size:13px;font-weight:500;color:var(--forest)}
-  .btn-sm{padding:6px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .18s}
-  .btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--muted)}
-  .btn-ghost:hover{border-color:var(--sage);color:var(--forest)}
-  .live-badge{display:flex;align-items:center;gap:5px;background:rgba(74,173,160,0.1);border:1px solid rgba(74,173,160,0.35);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--teal);font-weight:500;cursor:pointer;transition:all .18s}
-  .live-badge:hover{background:rgba(74,173,160,0.18)}
-  .live-badge.on{background:rgba(74,173,160,0.2);border-color:var(--teal)}
-  .live-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:blink 1.3s infinite}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
-
-  /* LAYOUT */
-  .main{display:flex;height:calc(100vh - 54px)}
-
-  /* SIDEBAR */
-  .sidebar{width:268px;flex-shrink:0;background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-  .sidebar-head{padding:14px 14px 12px;border-bottom:1px solid var(--border)}
-  .sidebar-label{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:9px}
-  .add-btn{width:100%;padding:9px;border-radius:9px;background:rgba(74,173,160,0.08);border:1.5px dashed rgba(74,173,160,0.4);color:var(--teal);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .18s}
-  .add-btn:hover{background:rgba(74,173,160,0.14);border-color:var(--teal)}
-
-  .hike-list{flex:1;overflow-y:auto;padding:8px}
-  .hike-list::-webkit-scrollbar{width:3px}
-  .hike-list::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
-
-  .hike-card{border-radius:10px;padding:12px;margin-bottom:5px;cursor:pointer;transition:all .18s;border:1.5px solid transparent}
-  .hike-card:hover{background:var(--bg);border-color:var(--border)}
-  .hike-card.active{background:var(--bg);border-color:var(--sage)}
-  .hike-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:var(--forest);margin-bottom:2px}
-  .hike-meta{font-size:11px;color:var(--muted);margin-bottom:8px}
-  .hike-stats{display:flex;gap:0}
-  .hike-stat{flex:1}
-  .hike-stat-val{font-size:12px;font-weight:500;color:var(--sage)}
-  .hike-stat-val.teal{color:var(--teal)}
-  .hike-stat-key{font-size:10px;color:var(--muted)}
-  .photo-badge{display:inline-flex;align-items:center;gap:4px;margin-top:7px;background:rgba(74,173,160,0.1);border:1px solid rgba(74,173,160,0.2);border-radius:5px;padding:2px 7px;font-size:11px;color:var(--teal)}
-  .empty-state{text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;line-height:1.65}
-  .empty-icon{font-size:28px;margin-bottom:8px}
-
-  /* MAP */
-  .map-wrap{flex:1;position:relative;overflow:hidden}
-  #map{width:100%;height:100%}
-
-  /* STYLE BAR */
-  .style-bar{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(245,240,232,0.94);border:1px solid var(--border);border-radius:20px;padding:3px;display:flex;gap:2px;z-index:500;backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(74,92,74,0.1)}
-  .style-btn{border:none;border-radius:16px;padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);background:transparent;cursor:pointer;transition:all .18s;white-space:nowrap}
-  .style-btn:hover{color:var(--forest)}
-  .style-btn.on{background:var(--bg2);color:var(--forest);font-weight:600}
-
-  /* MAP CONTROLS */
-  .map-controls{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:5px;z-index:500}
-  .mctl{width:36px;height:36px;background:rgba(245,240,232,0.94);border:1px solid var(--border);border-radius:8px;color:var(--forest);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;box-shadow:0 1px 6px rgba(74,92,74,0.08)}
-  .mctl:hover{background:var(--bg2);border-color:var(--sage)}
-
-  /* INFO PANEL */
-  .info-panel{position:absolute;bottom:18px;left:18px;background:rgba(245,240,232,0.96);border:1px solid var(--border);border-radius:13px;padding:14px 16px;min-width:210px;backdrop-filter:blur(10px);z-index:500;box-shadow:0 4px 16px rgba(74,92,74,0.1)}
-  .info-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--sage);letter-spacing:.04em;margin-bottom:10px}
-  .info-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
-  .info-label{font-size:12px;color:var(--muted)}
-  .info-val{font-size:13px;font-weight:500;color:var(--forest)}
-  .info-val.teal{color:var(--teal)}
-  .info-val.terra{color:var(--terracotta)}
-  .elev-bar{height:3px;background:var(--bg2);border-radius:2px;margin-top:10px;overflow:hidden}
-  .elev-fill{height:100%;background:linear-gradient(90deg,var(--sage),var(--teal));border-radius:2px;transition:width .5s ease}
-
-  /* LIVE PANEL */
-  .live-panel{position:absolute;bottom:18px;right:18px;background:rgba(245,240,232,0.96);border:1px solid rgba(74,173,160,0.35);border-radius:13px;padding:12px 16px;display:none;z-index:500;min-width:175px;box-shadow:0 4px 16px rgba(74,92,74,0.1)}
-  .live-panel.show{display:block}
-  .live-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:8px;display:flex;align-items:center;gap:5px}
-  .live-row{display:flex;justify-content:space-between;margin-bottom:4px}
-  .live-label{font-size:12px;color:var(--muted)}
-  .live-val{font-size:13px;font-weight:500;color:var(--forest)}
-
-  /* PHOTO POPUP */
-  .photo-popup{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.88);opacity:0;pointer-events:none;background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;width:288px;z-index:600;transition:transform .22s cubic-bezier(.34,1.56,.64,1),opacity .18s;box-shadow:0 8px 32px rgba(74,92,74,0.15)}
-  .photo-popup.show{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:all}
-  .popup-img{width:100%;height:162px;background:linear-gradient(160deg,#c8dfd0,#a8c8b8,#d0e8d8);display:flex;align-items:center;justify-content:center}
-  .popup-body{padding:13px 15px 15px}
-  .popup-loc{font-size:11px;color:var(--teal);margin-bottom:3px;font-weight:500}
-  .popup-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:600;color:var(--forest);margin-bottom:5px}
-  .popup-coords{font-size:10px;color:var(--muted);font-family:monospace;background:var(--bg);padding:4px 8px;border-radius:5px;display:inline-block}
-  .popup-close{position:absolute;top:9px;right:9px;width:26px;height:26px;background:rgba(245,240,232,0.9);border:1px solid var(--border);border-radius:50%;color:var(--forest);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .18s}
-  .popup-close:hover{background:var(--bg2)}
-
-  /* MODAL */
-  .modal-bg{display:none;position:fixed;inset:0;background:rgba(74,92,74,0.25);z-index:800;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-  .modal-bg.show{display:flex}
-  .modal{background:#fff;border:1px solid var(--border);border-radius:16px;padding:30px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(74,92,74,0.15)}
-  .modal-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--forest);margin-bottom:22px}
-  .form-group{margin-bottom:14px}
-  .form-group label{display:block;font-size:12px;font-weight:500;color:var(--forest);margin-bottom:5px}
-  .form-group input,.form-group select{width:100%;padding:9px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--forest);outline:none;transition:border-color .18s}
-  .form-group input:focus,.form-group select:focus{border-color:var(--teal);background:#fff}
-  .form-row{display:flex;gap:10px}
-  .form-row .form-group{flex:1}
-  .modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:22px}
-  .btn-cancel{padding:9px 18px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .18s}
-  .btn-cancel:hover{border-color:var(--sage);color:var(--forest)}
-  .btn-save{padding:9px 20px;border-radius:8px;border:none;background:var(--teal);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s}
-  .btn-save:hover{background:#3a9d90}
-  .modal-error{background:rgba(212,132,90,0.1);border:1px solid rgba(212,132,90,0.3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--terracotta);margin-bottom:14px;display:none}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F0E8;--bg2:#E8E0D0;--bg3:#D8CEC0;
+  --sage:#7A9E7E;--teal:#4AADA0;--terracotta:#D4845A;
+  --wheat:#C8A97E;--forest:#4A5C4A;--muted:#8A9A8A;--border:#E8E0D0;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--forest);font-family:'DM Sans',sans-serif}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:54px;background:rgba(245,240,232,0.97);border-bottom:1px solid var(--border);z-index:1000;position:relative;box-shadow:0 1px 8px rgba(74,92,74,0.06)}
+.logo{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--sage)}
+.logo span{color:var(--forest)}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.user-chip{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 4px}
+.user-avatar{width:24px;height:24px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff}
+.user-name{font-size:13px;font-weight:500;color:var(--forest)}
+.btn-sm{padding:6px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .18s}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--sage);color:var(--forest)}
+.main{display:flex;height:calc(100vh - 54px)}
+.sidebar{width:268px;flex-shrink:0;background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-head{padding:14px;border-bottom:1px solid var(--border)}
+.sidebar-label{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:9px}
+.hike-active{background:var(--bg);border:1.5px solid var(--teal);border-radius:10px;padding:12px;margin-bottom:8px}
+.hike-active-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--forest);margin-bottom:8px}
+.live-stats{display:flex;gap:0;margin-bottom:10px}
+.live-stat{flex:1;display:flex;flex-direction:column;gap:1px}
+.live-stat-val{font-size:14px;font-weight:600;color:var(--teal)}
+.live-stat-key{font-size:10px;color:var(--muted)}
+.btn-start{width:100%;padding:10px;border:none;border-radius:8px;background:var(--teal);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s}
+.btn-start:hover{background:#3a9d90}
+.btn-stop{background:var(--terracotta) !important}
+.btn-stop:hover{background:#c0744a !important}
+.btn-photo{width:100%;padding:9px;border:none;border-radius:8px;background:var(--sage);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;margin-top:6px}
+.btn-photo:disabled{opacity:.4;cursor:not-allowed}
+.add-btn{width:100%;padding:9px;border-radius:9px;background:rgba(74,173,160,0.08);border:1.5px dashed rgba(74,173,160,0.4);color:var(--teal);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .18s}
+.hike-list{flex:1;overflow-y:auto;padding:8px}
+.hike-card{border-radius:10px;padding:12px;margin-bottom:5px;cursor:pointer;transition:all .18s;border:1.5px solid transparent}
+.hike-card:hover{background:var(--bg);border-color:var(--border)}
+.hike-card.active{background:var(--bg);border-color:var(--sage)}
+.hike-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:var(--forest);margin-bottom:2px}
+.hike-meta{font-size:11px;color:var(--muted);margin-bottom:7px}
+.hike-stats-row{display:flex;gap:0}
+.hike-stat-s{flex:1}
+.hike-stat-val-s{font-size:12px;font-weight:500;color:var(--sage)}
+.hike-stat-val-s.teal{color:var(--teal)}
+.hike-stat-key-s{font-size:10px;color:var(--muted)}
+.photo-badge{display:inline-flex;align-items:center;gap:4px;margin-top:7px;background:rgba(74,173,160,0.1);border:1px solid rgba(74,173,160,0.2);border-radius:5px;padding:2px 7px;font-size:11px;color:var(--teal)}
+.map-wrap{flex:1;position:relative;overflow:hidden}
+#map{width:100%;height:100%}
+.style-bar{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(245,240,232,0.94);border:1px solid var(--border);border-radius:20px;padding:3px;display:flex;gap:2px;z-index:500;backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(74,92,74,0.1)}
+.style-btn{border:none;border-radius:16px;padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);background:transparent;cursor:pointer;transition:all .18s;white-space:nowrap}
+.style-btn.on{background:var(--bg2);color:var(--forest);font-weight:600}
+.map-controls{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:5px;z-index:500}
+.mctl{width:36px;height:36px;background:rgba(245,240,232,0.94);border:1px solid var(--border);border-radius:8px;color:var(--forest);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;box-shadow:0 1px 6px rgba(74,92,74,0.08)}
+.mctl:hover{background:var(--bg2);border-color:var(--sage)}
+.info-panel{position:absolute;bottom:18px;left:18px;background:rgba(245,240,232,0.96);border:1px solid var(--border);border-radius:13px;padding:14px 16px;min-width:210px;backdrop-filter:blur(10px);z-index:500;box-shadow:0 4px 16px rgba(74,92,74,0.1)}
+.info-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--sage);letter-spacing:.04em;margin-bottom:10px}
+.info-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.info-label{font-size:12px;color:var(--muted)}
+.info-val{font-size:13px;font-weight:500;color:var(--forest)}
+.info-val.teal{color:var(--teal)}
+.info-val.terra{color:var(--terracotta)}
+.elev-bar{height:3px;background:var(--bg2);border-radius:2px;margin-top:10px;overflow:hidden}
+.elev-fill{height:100%;background:linear-gradient(90deg,var(--sage),var(--teal));border-radius:2px;transition:width .5s ease}
+.photo-popup{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.88);opacity:0;pointer-events:none;background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;width:288px;z-index:600;transition:transform .22s cubic-bezier(.34,1.56,.64,1),opacity .18s;box-shadow:0 8px 32px rgba(74,92,74,0.15)}
+.photo-popup.show{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:all}
+.popup-img{width:100%;height:162px;object-fit:cover;display:block;background:var(--bg2)}
+.popup-img-placeholder{width:100%;height:162px;background:linear-gradient(160deg,#c8dfd0,#a8c8b8);display:flex;align-items:center;justify-content:center;font-size:32px}
+.popup-body{padding:13px 15px 15px}
+.popup-loc{font-size:11px;color:var(--teal);margin-bottom:3px;font-weight:500}
+.popup-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:600;color:var(--forest);margin-bottom:5px}
+.popup-coords{font-size:10px;color:var(--muted);font-family:monospace;background:var(--bg);padding:4px 8px;border-radius:5px;display:inline-block}
+.popup-close{position:absolute;top:9px;right:9px;width:26px;height:26px;background:rgba(245,240,232,0.9);border:1px solid var(--border);border-radius:50%;color:var(--forest);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.toast{position:absolute;top:70px;left:50%;transform:translateX(-50%);background:var(--forest);color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;z-index:700;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(74,92,74,0.25);z-index:800;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border:1px solid var(--border);border-radius:16px;padding:30px;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(74,92,74,0.15)}
+.modal-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--forest);margin-bottom:20px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--forest);margin-bottom:5px}
+.form-group input,.form-group select{width:100%;padding:9px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--forest);outline:none;transition:border-color .18s}
+.form-group input:focus,.form-group select:focus{border-color:var(--teal);background:#fff}
+.form-row{display:flex;gap:10px}
+.form-row .form-group{flex:1}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.btn-cancel{padding:9px 18px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer}
+.btn-save{padding:9px 20px;border-radius:8px;border:none;background:var(--teal);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer}
+.modal-error{background:rgba(212,132,90,0.1);border:1px solid rgba(212,132,90,0.3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--terracotta);margin-bottom:14px;display:none}
+#photoInput{display:none}
 </style>
 </head>
 <body>
-
 <div class="topbar">
   <div class="logo">Trail<span>Frame</span></div>
   <div class="topbar-right">
-    <div class="live-badge" id="liveBadge" onclick="toggleLive()">
-      <span class="live-dot"></span> LIVE
-    </div>
     <div class="user-chip">
       <div class="user-avatar" id="userAvatar">J</div>
-      <span class="user-name" id="userName">janko</span>
+      <span class="user-name" id="userName">user</span>
     </div>
     <button class="btn-sm btn-ghost" onclick="logout()">Odhlásiť</button>
   </div>
@@ -143,75 +115,73 @@
 <div class="main">
   <div class="sidebar">
     <div class="sidebar-head">
-      <div class="sidebar-label">Moje trasy</div>
-      <button class="add-btn" onclick="openModal()">+ Pridať novú trasu</button>
+      <div class="sidebar-label">Aktívna trasa</div>
+      <div class="hike-active">
+        <div class="hike-active-name" id="activeName">Žiadna aktívna trasa</div>
+        <div class="live-stats">
+          <div class="live-stat"><span class="live-stat-val" id="liveDistVal">0.0 km</span><span class="live-stat-key">trasa</span></div>
+          <div class="live-stat"><span class="live-stat-val" id="liveTimeVal">00:00</span><span class="live-stat-key">čas</span></div>
+          <div class="live-stat"><span class="live-stat-val" id="livePhotosVal">0</span><span class="live-stat-key">fotky</span></div>
+        </div>
+        <button class="btn-start" id="startStopBtn" onclick="toggleTracking()">▶ Štart hike</button>
+        <button class="btn-photo" id="photoBtn" onclick="triggerPhoto()" disabled>📷 Pridať fotku</button>
+      </div>
+      <div style="height:10px"></div>
+      <div class="sidebar-label">Uložené trasy</div>
+      <button class="add-btn" onclick="openModal()">+ Pridať trasu manuálne</button>
     </div>
-    <div class="hike-list" id="hikeList">
-      <div class="empty-state"><div class="empty-icon">🥾</div>Načítavam trasy...</div>
-    </div>
+    <div class="hike-list" id="hikeList"><div style="text-align:center;padding:20px;color:var(--muted)">Načítavam...</div></div>
+    <div class="form-group" style="margin-top:8px">
+  <label>Fotky na trase (voliteľné)</label>
+  <input type="file" id="mPhotos" accept="image/*" multiple style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;width:100%;color:var(--forest);font-family:'DM Sans',sans-serif;font-size:13px">
+  <div style="font-size:11px;color:var(--muted);margin-top:4px">GPS súradnice sa načítajú automaticky z fotiek</div>
+</div>
   </div>
 
   <div class="map-wrap">
     <div id="map"></div>
-
     <div class="style-bar">
       <button class="style-btn on" onclick="setStyle('topo',this)">🗺 Topo</button>
       <button class="style-btn" onclick="setStyle('outdoor',this)">🏔 Outdoor</button>
       <button class="style-btn" onclick="setStyle('sat',this)">🛰 Satelit</button>
       <button class="style-btn" onclick="setStyle('street',this)">🏙 Street</button>
     </div>
-
     <div class="map-controls">
       <button class="mctl" onclick="map.zoomIn()">+</button>
       <button class="mctl" onclick="map.zoomOut()">−</button>
+      <button class="mctl" onclick="centerOnMe()">◎</button>
     </div>
-
     <div class="info-panel">
       <div class="info-title" id="infoTitle">Vyber trasu</div>
       <div class="info-row"><span class="info-label">Vzdialenosť</span><span class="info-val" id="infoDist">—</span></div>
       <div class="info-row"><span class="info-label">Prevýšenie</span><span class="info-val teal" id="infoElev">—</span></div>
       <div class="info-row"><span class="info-label">Čas</span><span class="info-val" id="infoTime">—</span></div>
-      <div class="info-row"><span class="info-label">Fotky na trase</span><span class="info-val terra" id="infoPhotos">—</span></div>
+      <div class="info-row"><span class="info-label">Fotky</span><span class="info-val terra" id="infoPhotos">—</span></div>
       <div class="elev-bar"><div class="elev-fill" id="elevFill" style="width:0%"></div></div>
     </div>
-
-    <div class="live-panel" id="livePanel">
-      <div class="live-title"><span class="live-dot"></span> Live trasa</div>
-      <div class="live-row"><span class="live-label">Vzdialenosť</span><span class="live-val" id="liveDist">0.0 km</span></div>
-      <div class="live-row"><span class="live-label">Čas</span><span class="live-val" id="liveTime">00:00</span></div>
-      <div class="live-row"><span class="live-label">Tempo</span><span class="live-val" id="livePace">—</span></div>
-    </div>
-
     <div class="photo-popup" id="photoPopup">
       <button class="popup-close" onclick="closePopup()">×</button>
-      <div class="popup-img">
-        <svg width="160" height="80" viewBox="0 0 160 80">
-          <rect width="160" height="80" fill="#c8dfd0"/>
-          <polygon points="10,78 55,20 100,78" fill="#7AB89E" opacity=".7"/>
-          <polygon points="60,78 105,30 150,78" fill="#4AADA0" opacity=".5"/>
-          <circle cx="22" cy="18" r="10" fill="#F5F0E8" opacity=".6"/>
-        </svg>
-      </div>
+      <div id="popupImgWrap"><div class="popup-img-placeholder">🏔</div></div>
       <div class="popup-body">
         <div class="popup-loc" id="popupLoc">📍 —</div>
         <div class="popup-name" id="popupName">—</div>
         <div class="popup-coords" id="popupCoords">—</div>
       </div>
     </div>
+    <div class="toast" id="toast"></div>
   </div>
 </div>
 
-<!-- MODAL -->
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
   <div class="modal">
-    <div class="modal-title">🥾 Pridať novú trasu</div>
+    <div class="modal-title">🥾 Pridať trasu manuálne</div>
     <div class="modal-error" id="modalError"></div>
     <div class="form-row">
-      <div class="form-group"><label>Názov trasy</label><input id="mName" placeholder="napr. Veľký Kriváň"></div>
+      <div class="form-group"><label>Názov</label><input id="mName" placeholder="Veľký Kriváň"></div>
       <div class="form-group"><label>Oblasť</label><input id="mArea" placeholder="Malá Fatra"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Vzdialenosť (km)</label><input id="mDist" type="number" step="0.1" placeholder="14.2"></div>
+      <div class="form-group"><label>Km</label><input id="mDist" type="number" step="0.1" placeholder="14.2"></div>
       <div class="form-group"><label>Prevýšenie (m)</label><input id="mElev" type="number" placeholder="980"></div>
     </div>
     <div class="form-row">
@@ -222,54 +192,28 @@
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal()">Zrušiť</button>
-      <button class="btn-save" onclick="saveHike()">Uložiť trasu</button>
+      <button class="btn-save" onclick="saveHike()">Uložiť</button>
     </div>
   </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhoto(this)">
 <script>
-const API = 'https://trailframe-production.up.railway.app/api';
-
-// AUTH GUARD
+const API = 'http://localhost:5174/api';
 const token = localStorage.getItem('token');
 const username = localStorage.getItem('username') || 'user';
 if (!token) window.location.href = 'login.html';
 document.getElementById('userName').textContent = username;
 document.getElementById('userAvatar').textContent = username.charAt(0).toUpperCase();
-
-function authHeaders(){ return {'Content-Type':'application/json','Authorization':'Bearer '+token}; }
+function authHeaders(){ return {'Authorization':'Bearer '+token}; }
 function logout(){ localStorage.clear(); window.location.href='login.html'; }
 
-// SAMPLE DATA
-const sampleHikes = [
-  { id:-1, name:'Veľký Kriváň', area:'Malá Fatra', distanceKm:14.2, elevationM:980, durationMinutes:262, difficulty:'Ťažká',
-    trackJson:JSON.stringify([[49.155,18.920],[49.160,18.928],[49.168,18.935],[49.175,18.942],[49.180,18.950],[49.185,18.958],[49.188,18.965],[49.190,18.970],[49.192,18.974],[49.195,18.978],[49.199,18.982],[49.2023,18.9741]]),
-    photosJson:JSON.stringify([
-      {lat:49.162,lng:18.930,name:'Ranná hmla v doline',location:'Štefanová, 650m',coords:'49.1620° N, 18.9300° E'},
-      {lat:49.175,lng:18.942,name:'Výhľad na Rozsutec',location:'Sedlo Bublen, 1260m',coords:'49.1750° N, 18.9420° E'},
-      {lat:49.188,lng:18.965,name:'Skalnatý hrebeň',location:'Hrebeň, 1580m',coords:'49.1880° N, 18.9650° E'},
-      {lat:49.2023,lng:18.9741,name:'Pohľad z vrcholu',location:'Veľký Kriváň, 1709m',coords:'49.2023° N, 18.9741° E'},
-    ])
-  },
-  { id:-2, name:'Rysy', area:'Vysoké Tatry', distanceKm:11.5, elevationM:1180, durationMinutes:348, difficulty:'Ťažká',
-    trackJson:JSON.stringify([[49.175,20.045],[49.178,20.050],[49.183,20.060],[49.189,20.070],[49.195,20.080],[49.201,20.090],[49.2075,20.0961]]),
-    photosJson:JSON.stringify([
-      {lat:49.178,lng:20.050,name:'Morské Oko za úsvitu',location:'Morské Oko, 1395m',coords:'49.1780° N, 20.0500° E'},
-      {lat:49.195,lng:20.080,name:'Ľadovcové jazierko',location:'Pod Rysmi, 2250m',coords:'49.1950° N, 20.0800° E'},
-      {lat:49.2075,lng:20.0961,name:'Vrchol Rysy',location:'Rysy, 2503m',coords:'49.2075° N, 20.0961° E'},
-    ])
-  },
-  { id:-3, name:'Chopok — sedlo Srdce', area:'Nízke Tatry', distanceKm:9.8, elevationM:650, durationMinutes:185, difficulty:'Stredná',
-    trackJson:JSON.stringify([[48.920,19.585],[48.928,19.592],[48.935,19.600],[48.940,19.608],[48.945,19.615],[48.950,19.620],[48.965,19.640]]),
-    photosJson:JSON.stringify([
-      {lat:48.930,lng:19.593,name:'Lyžiarske stopy v snehu',location:'Spodná stanica, 1010m',coords:'48.9300° N, 19.5930° E'},
-      {lat:48.965,lng:19.640,name:'Panoráma Nízkych Tatier',location:'Chopok, 2024m',coords:'48.9650° N, 19.6400° E'},
-    ])
-  }
-];
+function showToast(msg, duration=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), duration);
+}
 
-// MAP
 let map = L.map('map',{zoomControl:false,attributionControl:false}).setView([49.0,19.2],8);
 const tiles = {
   topo:   L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17}),
@@ -286,33 +230,55 @@ function setStyle(style,btn){
   btn.classList.add('on');
   map.removeLayer(currentBase);
   try{map.removeLayer(hikingOverlay);}catch(e){}
-  currentBase = style==='outdoor' ? tiles.topo : tiles[style] || tiles.topo;
+  currentBase=(style==='outdoor'||style==='topo')?tiles.topo:tiles[style];
   currentBase.addTo(map);
-  if(style==='outdoor'||style==='topo'){
+  if(style==='topo'||style==='outdoor'){
     hikingOverlay=L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png',{maxZoom:18,opacity:style==='outdoor'?.7:.55});
     hikingOverlay.addTo(map);
   }
-  layers.forEach(l=>{map.removeLayer(l);l.addTo(map);});
+  layers.forEach(l=>{try{map.removeLayer(l);l.addTo(map);}catch(e){}});
 }
 
-// HIKES
-let layers=[], activeId=null, allHikes=[];
-const trackColors=['#7A9E7E','#4AADA0','#D4845A','#C8A97E','#9B7FD4'];
+function centerOnMe(){
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(pos=>{
+      map.setView([pos.coords.latitude,pos.coords.longitude],14);
+    });
+  }
+}
+
+let layers=[], activeHikeId=null, allHikes=[];
+const trackColors=['#7A9E7E','#4AADA0','#D4845A','#C8A97E'];
+const sampleHikes=[
+  {id:-1,name:'Veľký Kriváň',area:'Malá Fatra',distanceKm:14.2,elevationM:980,durationMinutes:262,difficulty:'Ťažká',
+    trackJson:JSON.stringify([[49.155,18.920],[49.168,18.935],[49.180,18.950],[49.188,18.965],[49.2023,18.9741]]),
+    photosJson:JSON.stringify([
+      {lat:49.162,lng:18.930,name:'Ranná hmla',location:'Štefanová, 650m',coords:'49.1620° N, 18.9300° E',url:null},
+      {lat:49.188,lng:18.965,name:'Skalnatý hrebeň',location:'Hrebeň, 1580m',coords:'49.1880° N, 18.9650° E',url:null},
+      {lat:49.2023,lng:18.9741,name:'Pohľad z vrcholu',location:'Veľký Kriváň, 1709m',coords:'49.2023° N, 18.9741° E',url:null},
+    ])},
+  {id:-2,name:'Rysy',area:'Vysoké Tatry',distanceKm:11.5,elevationM:1180,durationMinutes:348,difficulty:'Ťažká',
+    trackJson:JSON.stringify([[49.175,20.045],[49.183,20.060],[49.195,20.080],[49.2075,20.0961]]),
+    photosJson:JSON.stringify([
+      {lat:49.178,lng:20.050,name:'Morské Oko',location:'Morské Oko, 1395m',coords:'49.1780° N, 20.0500° E',url:null},
+      {lat:49.2075,lng:20.0961,name:'Vrchol Rysy',location:'Rysy, 2503m',coords:'49.2075° N, 20.0961° E',url:null},
+    ])}
+];
 
 function renderList(hikes){
   const el=document.getElementById('hikeList');
-  if(!hikes.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">🥾</div>Žiadne trasy.<br>Pridaj svoju prvú!</div>'; return; }
+  if(!hikes.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted)">Žiadne trasy.</div>';return;}
   el.innerHTML=hikes.map((h,i)=>{
     const photos=JSON.parse(h.photosJson||'[]');
-    const hrs=Math.floor(h.durationMinutes/60), mins=h.durationMinutes%60;
+    const hrs=Math.floor(h.durationMinutes/60),mins=h.durationMinutes%60;
     const t=hrs>0?`${hrs}h ${mins}min`:`${mins}min`;
-    return `<div class="hike-card ${h.id===activeId?'active':''}" id="card${h.id}" onclick="selectHike(${i})">
+    return `<div class="hike-card ${h.id===activeHikeId?'active':''}" id="card${h.id}" onclick="selectHike(${i})">
       <div class="hike-name">${h.name}</div>
       <div class="hike-meta">${h.area}</div>
-      <div class="hike-stats">
-        <div class="hike-stat"><div class="hike-stat-val">${h.distanceKm} km</div><div class="hike-stat-key">trasa</div></div>
-        <div class="hike-stat"><div class="hike-stat-val teal">↑${h.elevationM}m</div><div class="hike-stat-key">výška</div></div>
-        <div class="hike-stat"><div class="hike-stat-val">${t}</div><div class="hike-stat-key">čas</div></div>
+      <div class="hike-stats-row">
+        <div class="hike-stat-s"><div class="hike-stat-val-s">${h.distanceKm}km</div><div class="hike-stat-key-s">trasa</div></div>
+        <div class="hike-stat-s"><div class="hike-stat-val-s teal">↑${h.elevationM}m</div><div class="hike-stat-key-s">výška</div></div>
+        <div class="hike-stat-s"><div class="hike-stat-val-s">${t}</div><div class="hike-stat-key-s">čas</div></div>
       </div>
       <div class="photo-badge">📷 ${photos.length} fotiek</div>
     </div>`;
@@ -320,23 +286,20 @@ function renderList(hikes){
 }
 
 function selectHike(idx){
-  const h=allHikes[idx]; activeId=h.id; closePopup();
-  layers.forEach(l=>map.removeLayer(l)); layers=[];
+  const h=allHikes[idx]; activeHikeId=h.id; closePopup();
+  layers.forEach(l=>{try{map.removeLayer(l);}catch(e){}});layers=[];
   document.querySelectorAll('.hike-card').forEach(c=>c.classList.remove('active'));
-  const card=document.getElementById('card'+h.id); if(card) card.classList.add('active');
-
+  const card=document.getElementById('card'+h.id); if(card)card.classList.add('active');
   const track=JSON.parse(h.trackJson||'[]');
   const photos=JSON.parse(h.photosJson||'[]');
   const color=trackColors[idx%trackColors.length];
-  const hrs=Math.floor(h.durationMinutes/60), mins=h.durationMinutes%60;
-
+  const hrs=Math.floor(h.durationMinutes/60),mins=h.durationMinutes%60;
   document.getElementById('infoTitle').textContent=h.name;
   document.getElementById('infoDist').textContent=h.distanceKm+' km';
   document.getElementById('infoElev').textContent='↑ '+h.elevationM+' m';
   document.getElementById('infoTime').textContent=hrs>0?`${hrs}h ${mins}min`:`${mins}min`;
   document.getElementById('infoPhotos').textContent='📷 '+photos.length+' miest';
   document.getElementById('elevFill').style.width=Math.min(100,(h.elevationM/1500)*100)+'%';
-
   if(track.length>1){
     const line=L.polyline(track,{color,weight:4.5,opacity:.9,lineCap:'round',lineJoin:'round'}).addTo(map);
     layers.push(line);
@@ -344,43 +307,169 @@ function selectHike(idx){
     layers.push(L.circleMarker(track[track.length-1],{radius:6,fillColor:'#fff',fillOpacity:1,color,weight:3}).addTo(map));
     map.fitBounds(line.getBounds(),{padding:[70,70]});
   }
-
   photos.forEach(p=>{
-    const icon=L.divIcon({
-      html:`<div style="width:28px;height:28px;background:#fff;border:2.5px solid var(--teal,#4AADA0);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 8px rgba(74,92,74,0.2);cursor:pointer;transition:transform .15s" onmouseenter="this.style.transform='scale(1.2)'" onmouseleave="this.style.transform='scale(1)'">📷</div>`,
-      iconSize:[28,28],iconAnchor:[14,14],className:''
-    });
+    const icon=L.divIcon({html:`<div style="width:30px;height:30px;background:#fff;border:2.5px solid #4AADA0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(74,92,74,0.2);cursor:pointer;transition:transform .15s" onmouseenter="this.style.transform='scale(1.2)'" onmouseleave="this.style.transform='scale(1)'">📷</div>`,iconSize:[30,30],iconAnchor:[15,15],className:''});
     const m=L.marker([p.lat,p.lng],{icon}).addTo(map);
     m.on('click',()=>openPopup(p));
     layers.push(m);
   });
+  // Load real photos from API
+if(h.id > 0){
+  fetch(`${API}/photos/hike/${h.id}`, {headers:{'Authorization':'Bearer '+token}})
+    .then(r=>r.json())
+    .then(photos=>{
+      photos.forEach(p=>{
+        const icon=L.divIcon({html:`<div style="width:30px;height:30px;background:#fff;border:2.5px solid #4AADA0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(74,92,74,0.2);cursor:pointer">📷</div>`,iconSize:[30,30],iconAnchor:[15,15],className:''});
+        const m=L.marker([p.lat,p.lng],{icon}).addTo(map);
+        m.on('click',()=>openPopup({lat:p.lat,lng:p.lng,name:'Fotka',location:`${p.lat.toFixed(4)}° N, ${p.lng.toFixed(4)}° E`,coords:`${p.lat.toFixed(4)}° N, ${p.lng.toFixed(4)}° E`,url:p.url}));
+        layers.push(m);
+      });
+      document.getElementById('infoPhotos').textContent='📷 '+photos.length+' miest';
+    })
+    .catch(e=>console.log('photos error',e));
+}
 }
 
 function openPopup(p){
-  document.getElementById('popupName').textContent=p.name;
+  const wrap=document.getElementById('popupImgWrap');
+  wrap.innerHTML=p.url?`<img class="popup-img" src="${API.replace('/api','')}${p.url}" onerror="this.parentElement.innerHTML='<div class=popup-img-placeholder>🏔</div>'">`:'<div class="popup-img-placeholder">🏔</div>';
+  document.getElementById('popupName').textContent=p.name||'Fotka';
   document.getElementById('popupLoc').textContent='📍 '+(p.location||p.loc||'');
   document.getElementById('popupCoords').textContent=p.coords||`${p.lat.toFixed(4)}° N, ${p.lng.toFixed(4)}° E`;
   document.getElementById('photoPopup').classList.add('show');
 }
-function closePopup(){ document.getElementById('photoPopup').classList.remove('show'); }
+function closePopup(){document.getElementById('photoPopup').classList.remove('show');}
 
-// LOAD HIKES
 async function loadHikes(){
   try{
-    const res=await fetch(`${API}/hikes`,{headers:authHeaders()});
+    const res=await fetch(`${API}/hikes`,{headers:{'Authorization':'Bearer '+token}});
     if(res.status===401){logout();return;}
     const data=await res.json();
     allHikes=data.length>0?data:sampleHikes;
     renderList(allHikes);
-    if(allHikes.length>0) selectHike(0);
-  }catch(e){
-    allHikes=sampleHikes; renderList(allHikes); selectHike(0);
-  }
+    if(allHikes.length>0)selectHike(0);
+  }catch(e){allHikes=sampleHikes;renderList(allHikes);selectHike(0);}
 }
 
-// MODAL
-function openModal(){ document.getElementById('modalBg').classList.add('show'); }
-function closeModal(){ document.getElementById('modalBg').classList.remove('show'); document.getElementById('modalError').style.display='none'; }
+let tracking=false,watchId=null,trackPoints=[],livePolyline=null,liveMarker=null;
+let trackStartTime=null,trackTimer=null,livePhotoCount=0,currentHikeId=null;
+let totalDistance=0,lastPos=null;
+
+function toggleTracking(){ if(!tracking)startTracking(); else stopTracking(); }
+
+async function startTracking(){
+  const name=prompt('Názov hiku:','Môj hike');
+  if(!name)return;
+  const area=prompt('Oblasť:','Slovensko');
+  try{
+    const res=await fetch(`${API}/hikes`,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({name,area:area||'Slovensko',distanceKm:0,elevationM:0,durationMinutes:0,difficulty:'Stredná',trackJson:'[]',photosJson:'[]'})});
+    const hike=await res.json();
+    currentHikeId=hike.id;
+  }catch(e){currentHikeId=null;}
+  tracking=true; trackPoints=[]; totalDistance=0; lastPos=null; livePhotoCount=0; trackStartTime=Date.now();
+  document.getElementById('startStopBtn').textContent='⏹ Zastaviť hike';
+  document.getElementById('startStopBtn').classList.add('btn-stop');
+  document.getElementById('photoBtn').disabled=false;
+  document.getElementById('activeName').textContent=name;
+  if(livePolyline){map.removeLayer(livePolyline);livePolyline=null;}
+  if(liveMarker){map.removeLayer(liveMarker);liveMarker=null;}
+  livePolyline=L.polyline([],{color:'#4AADA0',weight:4,opacity:.9,lineCap:'round'}).addTo(map);
+  const liveIcon=L.divIcon({html:`<div style="width:16px;height:16px;background:#4AADA0;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 6px rgba(74,173,160,.25)"></div>`,iconSize:[16,16],iconAnchor:[8,8],className:''});
+  liveMarker=L.marker([0,0],{icon:liveIcon,zIndexOffset:1000});
+  trackTimer=setInterval(updateTimer,1000);
+  if(!navigator.geolocation){showToast('GPS nie je dostupná');return;}
+  watchId=navigator.geolocation.watchPosition(
+    pos=>{
+      const lat=pos.coords.latitude,lng=pos.coords.longitude,pt=[lat,lng];
+      if(!liveMarker._map)liveMarker.addTo(map);
+      liveMarker.setLatLng(pt); trackPoints.push(pt); livePolyline.addLatLng(pt);
+      map.panTo(pt,{animate:true,duration:.5});
+      if(lastPos){totalDistance+=calcDistance(lastPos[0],lastPos[1],lat,lng); document.getElementById('liveDistVal').textContent=totalDistance.toFixed(2)+' km';}
+      lastPos=[lat,lng];
+    },
+    err=>showToast('GPS chyba: '+err.message),
+    {enableHighAccuracy:true,maximumAge:5000,timeout:10000}
+  );
+  showToast('🎯 GPS tracking spustený!');
+}
+
+async function stopTracking(){
+  if(!tracking)return;
+  tracking=false;
+  clearInterval(trackTimer);
+  if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;}
+  document.getElementById('startStopBtn').textContent='▶ Štart hike';
+  document.getElementById('startStopBtn').classList.remove('btn-stop');
+  document.getElementById('photoBtn').disabled=true;
+  if(currentHikeId&&trackPoints.length>1){
+    const mins=Math.round((Date.now()-trackStartTime)/60000);
+    try{
+      await fetch(`${API}/hikes/${currentHikeId}`,{method:'PUT',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({distanceKm:parseFloat(totalDistance.toFixed(2)),durationMinutes:mins,trackJson:JSON.stringify(trackPoints)})});
+    }catch(e){}
+  }
+  showToast('✅ Hike uložený!');
+  loadHikes();
+}
+
+function updateTimer(){
+  if(!trackStartTime)return;
+  const sec=Math.floor((Date.now()-trackStartTime)/1000);
+  const mm=String(Math.floor(sec/60)).padStart(2,'0'),ss=String(sec%60).padStart(2,'0');
+  document.getElementById('liveTimeVal').textContent=mm+':'+ss;
+}
+
+function calcDistance(lat1,lon1,lat2,lon2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function triggerPhoto(){ document.getElementById('photoInput').click(); }
+
+async function handlePhoto(input){
+  const file=input.files[0]; if(!file)return;
+  showToast('📍 Čítam GPS z fotky...');
+  let lat=null,lng=null;
+  try{
+    const exif=await exifr.parse(file,{gps:true});
+    if(exif&&exif.latitude&&exif.longitude){lat=exif.latitude;lng=exif.longitude;showToast(`📍 GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);}
+  }catch(e){}
+  if(!lat&&navigator.geolocation){
+    showToast('📍 Používam aktuálnu polohu...');
+    await new Promise(resolve=>{navigator.geolocation.getCurrentPosition(pos=>{lat=pos.coords.latitude;lng=pos.coords.longitude;resolve();},()=>resolve(),{enableHighAccuracy:true,timeout:8000});});
+  }
+  if(!lat){showToast('❌ GPS poloha nedostupná');input.value='';return;}
+  const hikeId=currentHikeId||-1;
+  if(hikeId!==-1){
+    try{
+      const formData=new FormData();
+      formData.append('file',file);
+      formData.append('lat', lat.toString().replace(',','.'));
+      formData.append('lng', lng.toString().replace(',','.'));
+      formData.append('hikeId',hikeId);
+      const res=await fetch(`${API}/photos/upload`,{method:'POST',headers:authHeaders(),body:formData});
+      const data=await res.json();
+      addPhotoPin(lat,lng,file.name,data.url);
+      livePhotoCount++;
+      document.getElementById('livePhotosVal').textContent=livePhotoCount;
+      showToast('📷 Fotka uložená!');
+    }catch(e){addPhotoPin(lat,lng,file.name,null);showToast('📷 Fotka pridaná!');}
+  } else {
+    addPhotoPin(lat,lng,file.name,null);
+    showToast('📷 Fotka pridaná na mapu!');
+  }
+  input.value='';
+}
+
+function addPhotoPin(lat,lng,name,url){
+  const icon=L.divIcon({html:`<div style="width:30px;height:30px;background:#fff;border:2.5px solid #D4845A;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(74,92,74,0.25)">📷</div>`,iconSize:[30,30],iconAnchor:[15,15],className:''});
+  const m=L.marker([lat,lng],{icon}).addTo(map);
+  m.on('click',()=>openPopup({lat,lng,name,location:`${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E`,coords:`${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E`,url}));
+  layers.push(m);
+}
+
+function openModal(){document.getElementById('modalBg').classList.add('show');}
+function closeModal(){document.getElementById('modalBg').classList.remove('show');document.getElementById('modalError').style.display='none';}
 
 async function saveHike(){
   const name=document.getElementById('mName').value.trim();
@@ -390,47 +479,32 @@ async function saveHike(){
   const dur=parseInt(document.getElementById('mDur').value);
   const diff=document.getElementById('mDiff').value;
   if(!name||!area||isNaN(dist)||isNaN(elev)||isNaN(dur)){
-    const el=document.getElementById('modalError'); el.textContent='Vyplň všetky polia.'; el.style.display='block'; return;
+    const el=document.getElementById('modalError');el.textContent='Vyplň všetky polia.';el.style.display='block';return;
   }
   try{
-    const res=await fetch(`${API}/hikes`,{method:'POST',headers:authHeaders(),body:JSON.stringify({name,area,distanceKm:dist,elevationM:elev,durationMinutes:dur,difficulty:diff,trackJson:'[]',photosJson:'[]'})});
-    if(!res.ok) throw new Error();
-    closeModal(); loadHikes();
-  }catch(e){
-    const el=document.getElementById('modalError'); el.textContent='Nepodarilo sa uložiť. Skontroluj API.'; el.style.display='block';
+    const res=await fetch(`${API}/hikes`,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({name,area,distanceKm:dist,elevationM:elev,durationMinutes:dur,difficulty:diff,trackJson:'[]',photosJson:'[]'})});
+    if(!res.ok){const el=document.getElementById('modalError');el.textContent='Chyba. Skontroluj API.';el.style.display='block';return;}
+    const hike = await res.json();
+    closeModal();loadHikes();showToast('✅ Trasa uložená!');
+const photos = document.getElementById('mPhotos')?.files;
+if(photos && photos.length > 0){
+  for(const photo of photos){
+    const exif = await exifr.parse(photo,{gps:true}).catch(()=>null);
+    let lat=exif?.latitude, lng=exif?.longitude;
+    if(!lat && navigator.geolocation){
+      const pos=await new Promise(r=>navigator.geolocation.getCurrentPosition(r,()=>r(null),{timeout:5000}));
+      lat=pos?.coords.latitude; lng=pos?.coords.longitude;
+    }
+    if(lat){
+      const fd=new FormData();
+      fd.append('file',photo);fd.append('lat',String(lat));fd.append('lng',String(lng));fd.append('hikeId',String(hike.id));
+      await fetch(`${API}/photos/upload`,{method:'POST',headers:authHeaders(),body:fd}).catch(()=>{});
+    }
   }
+  showToast('📷 Fotky uložené!');
 }
-
-// LIVE TRACKING
-let liveOn=false,liveInterval=null,liveSec=0,liveDist=0,liveMarker=null,livePolyline=null,livePts=[];
-function toggleLive(){
-  liveOn=!liveOn;
-  document.getElementById('livePanel').classList.toggle('show',liveOn);
-  document.getElementById('liveBadge').classList.toggle('on',liveOn);
-  if(liveOn){
-    livePts=[[48.70,19.50]]; liveSec=0; liveDist=0;
-    if(liveMarker) map.removeLayer(liveMarker);
-    if(livePolyline) map.removeLayer(livePolyline);
-    const icon=L.divIcon({html:`<div style="width:14px;height:14px;background:${getComputedStyle(document.documentElement).getPropertyValue('--teal')||'#4AADA0'};border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 5px rgba(74,173,160,.25)"></div>`,iconSize:[14,14],iconAnchor:[7,7],className:''});
-    liveMarker=L.marker(livePts[0],{icon,zIndexOffset:1000}).addTo(map);
-    livePolyline=L.polyline(livePts,{color:'#4AADA0',weight:3,opacity:.8,dashArray:'6 4'}).addTo(map);
-    map.setView(livePts[0],13);
-    liveInterval=setInterval(()=>{
-      liveSec++; const last=livePts[livePts.length-1];
-      const pt=[last[0]+0.0006+(Math.random()-.5)*0.0002,last[1]+0.0004+(Math.random()-.5)*0.0002];
-      livePts.push(pt); liveDist+=0.065;
-      liveMarker.setLatLng(pt); livePolyline.setLatLngs(livePts);
-      map.panTo(pt,{animate:true,duration:.8});
-      const mm=String(Math.floor(liveSec/60)).padStart(2,'0'), ss=String(liveSec%60).padStart(2,'0');
-      document.getElementById('liveDist').textContent=liveDist.toFixed(1)+' km';
-      document.getElementById('liveTime').textContent=mm+':'+ss;
-      const pace=liveDist>0?(liveSec/60)/liveDist:0;
-      document.getElementById('livePace').textContent=pace>0?Math.floor(pace)+"'"+(Math.round((pace%1)*60)+'').padStart(2,'0')+'"':'—';
-    },1000);
-  } else {
-    clearInterval(liveInterval);
-    if(liveMarker){map.removeLayer(liveMarker);liveMarker=null;}
-    if(livePolyline){map.removeLayer(livePolyline);livePolyline=null;}
+  }catch(e){
+    const el=document.getElementById('modalError');el.textContent='Chyba. Skontroluj API.';el.style.display='block';
   }
 }
 
