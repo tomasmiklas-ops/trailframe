@@ -199,7 +199,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--forest);f
 
 <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhoto(this)">
 <script>
-const API = 'http://localhost:5174/api';
+const API = 'https://trailframe-production.up.railway.app/api';
 const token = localStorage.getItem('token');
 const username = localStorage.getItem('username') || 'user';
 if (!token) window.location.href = 'login.html';
